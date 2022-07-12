@@ -1,0 +1,6 @@
+#!/bin/bash
+echo -e "req takes Method, Url and (post data or null) respectively\n"
+
+
+curl -X $1 $2 -d $3; echo -e '\n'
+
