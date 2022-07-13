@@ -12,10 +12,15 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
+    profile_picture = serializers.SerializerMethodField()
+
     class Meta:
         model = Profile
         fields = "__all__"
         depth = 1
+
+    def get_profile_picture(self, obj):
+        return obj.profile_picture.url
 
 
 class ChapterSerializer(serializers.ModelSerializer):

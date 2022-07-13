@@ -2,11 +2,13 @@ import rest_framework.permissions as perm
 from django.contrib.auth import authenticate, get_user_model, login
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from .models import Chapter, Comment, CommentResponse, Novel, Profile
+from .permissions import IsOwnerOrAdmin
 from .serializers import (ChapterSerializer, CommentResponseSerializer,
                           CommentSerializer, NovelSerializer,
                           ProfileSerializer, UserSerializer)
@@ -35,8 +37,10 @@ class UserViewSet(viewsets.ModelViewSet):
         user = authenticate(
             request, username=data["username"], password=data["password"]
         )
+
         if user:
             return Response({"token": str(user.auth_token)})
+
         return Response(
             {"details": "User not found, please register to get authenticated!"}
         )
@@ -45,4 +49,32 @@ class UserViewSet(viewsets.ModelViewSet):
 class ProfileViewSet(viewsets.ModelViewSet):
     queryset = Profile.objects.all()
     serializer_class = ProfileSerializer
-    permission_classes = [perm.IsAuthenticated]
+    permission_classes = [IsOwnerOrAdmin]
+
+    @action(detail=True, methods=["put", "post", "patch"])
+    def follow(self, request, pk=None):
+        flw = get_object_or_404(self.get_queryset(), pk=pk)
+        user = request.user
+        try:
+            flw.followers.add(user.profile.pk)
+            user.profile.following.add(flw.pk)
+            return Response({"detail": f"{request.user} followed {flw.user}"})
+        except:
+            return Response(
+                {"detail": "Internal server error"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    @action(detail=True, methods=["put", "post", "patch"])
+    def unfollow(self, request, pk=None):
+        fin = get_object_or_404(self.get_queryset(), pk=pk)
+        user = request.user
+        try:
+            fin.followers.remove(user.profile)
+            user.profile.following.remove(pk)
+            return Response({"detail": f"{request.user} unfollowed {fin.user}"})
+        except:
+            return Response(
+                {"detail": "Internal server error"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )

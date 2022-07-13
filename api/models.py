@@ -11,7 +11,7 @@ class Profile(models.Model):
     )
 
     profile_picture = CloudinaryField("image")
-    followers = models.ManyToManyField("self", blank=True)
+    followers = models.ManyToManyField("self", blank=True, related_name='profile_flwr')
     following = models.ManyToManyField("self", blank=True)
     read_count = models.PositiveIntegerField(default=0)
     created = models.DateTimeField(auto_now_add=True)

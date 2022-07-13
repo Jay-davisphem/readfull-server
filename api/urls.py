@@ -1,17 +1,15 @@
 from django.urls import include, path
+from rest_framework.routers import DefaultRouter
 
 from . import docs_urls, views
 
-# from rest_framework.authtoken import views as authviews
-# from rest_framework.routers import DefaultRouter
-
-# router = DefaultRouter()
-# router.register(r"users", views.UserViewSet, basename="users")
-# router.register(r"profiles", views.ProfileViewSet, basename="profiles")
-
 login = views.UserViewSet.as_view({"post": "login"})
 register = views.UserViewSet.as_view({"post": "register"})
+
+router = DefaultRouter()
+router.register(r"profiles", views.ProfileViewSet, basename="profiles")
 urlpatterns = [
+    path("", include(router.urls)),
     path("login/", login, name="login"),
     path("register/", register, name="register"),
 ]
