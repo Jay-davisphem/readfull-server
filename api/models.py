@@ -3,6 +3,8 @@ from django.contrib.auth import get_user_model
 from django.db import models
 
 User = get_user_model()
+
+
 class Profile(models.Model):
     user = models.OneToOneField(
         User,
@@ -10,8 +12,8 @@ class Profile(models.Model):
         primary_key=True,
     )
 
-    profile_picture = CloudinaryField("image")
-    followers = models.ManyToManyField("self", blank=True, related_name='profile_flwr')
+    profile_picture = CloudinaryField("image", blank=True)
+    followers = models.ManyToManyField("self", blank=True)
     following = models.ManyToManyField("self", blank=True)
     read_count = models.PositiveIntegerField(default=0)
     created = models.DateTimeField(auto_now_add=True)
@@ -32,9 +34,9 @@ class Novel(models.Model):
         ONGOING = "ONG", "Ongoing"
         STOPPED = "STP", "Stopped"
         COMPLETED = "CPD", "Completed"
-        MOST_POPULAR = 'MPL', 'Most Popular'
-        LATEST_RELEASE = 'LTS', 'Latest Release'
-        HOT_NOVEL = 'HOT', 'Hot Novel'
+        MOST_POPULAR = "MPL", "Most Popular"
+        LATEST_RELEASE = "LTS", "Latest Release"
+        HOT_NOVEL = "HOT", "Hot Novel"
         __empty__ = ""
 
     GENRE_CHOICES = [
@@ -58,12 +60,12 @@ class Novel(models.Model):
         ),
     ]
     title = models.CharField(max_length=100)
-    image = CloudinaryField("image")
+    image = CloudinaryField("image", blank=True)
     description = models.TextField()
     status = models.CharField(
         max_length=3, choices=NovelStatus.choices, default=NovelStatus.UPCOMING
     )
-    rating = models.DecimalField(max_digits=2, decimal_places=1)
+    rating = models.DecimalField(max_digits=2, decimal_places=1, default=0)
     view_count = models.PositiveBigIntegerField(default=0)
     genre = models.CharField(max_length=3, choices=GENRE_CHOICES, default="CHD")
     author = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
@@ -114,6 +116,7 @@ class Comment(models.Model):
 
     def __str__(self):
         return f"Comment {self.id}"
+
 
 class CommentResponse(models.Model):
     responder = models.ForeignKey(User, on_delete=models.CASCADE)

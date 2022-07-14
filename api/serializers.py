@@ -5,22 +5,34 @@ from .models import Chapter, Comment, CommentResponse, Novel, Profile
 
 
 class UserSerializer(serializers.ModelSerializer):
+    profile_id = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ["username", "email", "password"]
+        fields = ["username", "email", "password", "profile_id"]
         extra_kwargs = {"password": {"write_only": True}}
+
+    def get_profile_id(self, obj):
+        return obj.profile.pk
 
 
 class ProfileSerializer(serializers.ModelSerializer):
     profile_picture = serializers.SerializerMethodField()
+    follower_count = serializers.SerializerMethodField()
+    following_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
         fields = "__all__"
-        depth = 1
 
     def get_profile_picture(self, obj):
         return obj.profile_picture.url
+
+    def get_follower_count(self, obj):
+        return obj.followers.count()
+
+    def get_following_count(self, obj):
+        return obj.following.count()
 
 
 class ChapterSerializer(serializers.ModelSerializer):

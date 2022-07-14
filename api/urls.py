@@ -8,6 +8,8 @@ register = views.UserViewSet.as_view({"post": "register"})
 
 router = DefaultRouter()
 router.register(r"profiles", views.ProfileViewSet, basename="profiles")
+router.register("novels", views.NovelViewSet, basename="novels")
+
 urlpatterns = [
     path("", include(router.urls)),
     path("login/", login, name="login"),
