@@ -7,7 +7,7 @@ class IsObjectOrAdminMixin(permissions.BasePermission):
 
     def has_permission(self, request, view):
         if self.auth:
-            return request.user.is_authentiated
+            return request.user.is_authenticated
         if view.action in ("list", "retrieve"):
             return True
         return request.user.is_authenticated
