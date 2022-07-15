@@ -38,7 +38,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 class ChapterSerializer(serializers.ModelSerializer):
     class Meta:
         model = Chapter
-        fields = "__all__"
+        fields = ["title", "content", "novel_id", "chapter_no"]
 
 
 class NovelSerializer(serializers.ModelSerializer):

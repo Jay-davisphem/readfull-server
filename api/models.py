@@ -90,9 +90,9 @@ class Chapter(models.Model):
         FIVE = 5, "Interesting"
 
     title = models.CharField(max_length=100)
-    chapter_no = models.PositiveIntegerField(default=1)
+    chapter_no = models.PositiveIntegerField(default=0, unique=True)
     content = models.TextField()
-    likes = models.IntegerField(choices=LikesChoices.choices)
+    likes = models.IntegerField(choices=LikesChoices.choices, default=0)
     novel = models.ForeignKey(Novel, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)

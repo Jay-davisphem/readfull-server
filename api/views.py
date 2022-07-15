@@ -1,14 +1,13 @@
-import rest_framework.permissions as perm
-from django.contrib.auth import authenticate, get_user_model, login
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.contrib.auth import authenticate, get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from .models import Chapter, Comment, CommentResponse, Novel, Profile
-from .permissions import IsAuthorOrAdmin, IsOwnerOrAdmin, IsNovelistOrAdmin, IsCommenterOrAdmin, IsResponderOrAdmin
+from .permissions import (IsAuthorOrAdmin, IsCommenterOrAdmin,
+                          IsNovelistOrAdmin, IsOwnerOrAdmin,
+                          IsResponderOrAdmin)
 from .serializers import (ChapterSerializer, CommentResponseSerializer,
                           CommentSerializer, NovelSerializer,
                           ProfileSerializer, UserSerializer)
@@ -40,11 +39,17 @@ class UserViewSet(viewsets.ModelViewSet):
 
         if user:
             return Response(
-                {"token": str(user.auth_token), "user": UserSerializer(data).data}
+                {
+                    "token": str(user.auth_token),
+                    "user": UserSerializer(data).data,
+                }
             )
 
         return Response(
-            {"details": "User not found, please register to get authenticated!"}
+            {
+                "details": "User not found, \
+             please register to get authenticated!"
+            }
         )
 
 
@@ -74,8 +79,12 @@ class ProfileViewSet(viewsets.ModelViewSet):
         try:
             fin.followers.remove(user.profile)
             user.profile.following.remove(pk)
-            return Response({"detail": f"{request.user} unfollowed {fin.user}"})
-        except:
+            return Response(
+                {
+                    "detail": f"{request.user} unfollowed {fin.user}",
+                }
+            )
+        except Exception:
             return Response(
                 {"detail": "Internal server error"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -87,3 +96,76 @@ class NovelViewSet(viewsets.ModelViewSet):
     serializer_class = NovelSerializer
     permission_classes = [IsAuthorOrAdmin]
 
+
+class ChapterViewSet(viewsets.ModelViewSet):
+    queryset = Chapter.objects.all()
+    serializer_class = ChapterSerializer
+    permission_classes = [IsNovelistOrAdmin]
+
+    def get_novel(self, pk=None):
+        return get_object_or_404(Novel, pk=pk)
+
+    def get_object(self, pk=None):
+        return get_object_or_404(self.get_queryset(), pk=pk)
+
+    def create(self, request, pk=None):
+        novel = self.get_novel(pk)
+        last = Chapter.objects.last()
+        serializer = ChapterSerializer(request.data)
+        data = serializer.data
+        if last:
+            ch = Chapter.objects.create(
+                **{**data, "novel_id": pk, "chapter_no": last.chapter_no + 1}
+            )
+        else:
+            ch = Chapter.objects.create(**data, novel_id=pk, chapter_no=1)
+        serializer = ChapterSerializer(ch)
+        return Response(
+            {
+                "details": f"{novel.title}\
+Chapter {serializer.data['chapter_no']} successfully created",
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    def retrieve(self, request, pk=None, ch_pk=None):
+        self.get_novel(pk)
+        ch = self.get_object(pk=ch_pk)
+        serializer = ChapterSerializer(ch)
+        return Response(serializer.data)
+
+    def list(self, request, pk=None):
+        self.get_novel(pk)
+        chs = Chapter.objects.filter(novel_id=pk)
+        page = self.paginate_queryset(chs)
+        if page:
+            print(f"{page=}")
+            data = ChapterSerializer(page, many=True).data
+            return self.get_paginated_response(data)
+        data = ChapterSerializer(chs, many=True).data
+        return Response(data)
+
+    def __detail(self, request, pk=None, ch_pk=None):
+        self.get_novel(pk=pk)
+        return self.get_object(pk=ch_pk)
+
+    def desstroy(self, request, pk=None, ch_pk=None):
+        self.__detail(request, pk, ch_pk).delete()
+        return Response("Deleted successfully")
+
+    def update(self, request, pk=None, ch_pk=None):
+        ch = self.__detail(request, pk, ch_pk)
+        data = ChapterSerializer(request.data).data
+        p_title = ch.title
+        p_content = ch.content
+        p_chn = ch.chapter_no
+
+        try:
+            ch.title = data.get("title", p_title)
+            ch.content = data.get("content", p_content)
+            ch.chapter_no = data.get("chapter_no", p_chn)
+            ch.save()
+            data = ChapterSerializer(ch).data
+            return Response(data)
+        except Exception:
+            return Response("Could not update {ch.title}")

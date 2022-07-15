@@ -1,11 +1,11 @@
-FROM python:3.10-slim-buster
+FROM python:latest
 
 WORKDIR /app
 
-COPY requirements.txt requirements.txt
+COPY ./requirements.txt /app
 RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
-COPY . .
+COPY . /app
 
 CMD ["python3", "manage.py", "runserver", "0.0.0.0:8000"]
