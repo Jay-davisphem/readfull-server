@@ -78,7 +78,7 @@ class Novel(models.Model):
         ordering = ["-updated", "-created", "title"]
 
     def __str__(self):
-        return self.title
+        return f"{self.title} - {self.chapter_set.count()} chapters"
 
 
 class Chapter(models.Model):
@@ -101,7 +101,7 @@ class Chapter(models.Model):
         ordering = ["chapter_no"]
 
     def __str__(self):
-        return f"Chapter {self.chapter_no} - {self.title}"
+        return f"{self.novel.title} | Chapter {self.chapter_no} - {self.title}"
 
 
 class Comment(models.Model):
