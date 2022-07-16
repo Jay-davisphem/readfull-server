@@ -1,0 +1,25 @@
+version: "3"
+services:
+  web:
+    restart: always
+    expose:
+      - "8000"
+    build: .
+    volumes:
+      - .:/app
+    env_file: .env
+    command: /usr/local/bin/gunicorn readfull.wsgi:application -w 2 -b :8000
+    depends_on:
+      - db
+  db:
+    restart: always
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - "POSTGRES_HOST_AUTH_METHOD=trust"
+
+volumes:
+  postgres_data:

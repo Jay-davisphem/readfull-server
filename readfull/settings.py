@@ -79,11 +79,11 @@ WSGI_APPLICATION = "readfull.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
-        "NAME": "readfull",
-        "USER": "davisphem",
-        "PASSWORD": "phemmy2022",
-        "HOST": "localhost",
-        "PORT": "",
+        "NAME": 'postgres',#"readfull",
+        "USER": 'postgres',#"davisphem",
+        "PASSWORD": 'postgres', #"phemmy2022",
+        "HOST": os.getenv('DB_HOST'),
+        "PORT": os.getenv('DB_PORT'),
     }
 }
 
