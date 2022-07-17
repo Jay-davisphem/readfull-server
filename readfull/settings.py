@@ -76,14 +76,15 @@ WSGI_APPLICATION = "readfull.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
+use = os.getenv("use")
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
-        "NAME": 'postgres',#"readfull",
-        "USER": 'postgres',#"davisphem",
-        "PASSWORD": 'postgres', #"phemmy2022",
-        "HOST": os.getenv('DB_HOST'),
-        "PORT": os.getenv('DB_PORT'),
+        "NAME": "postgres" if use else "readfull",
+        "USER": "postgres" if use else "davisphem",
+        "PASSWORD": "postgres" if use else "phemmy2022",
+        "HOST": os.getenv("DB_HOST") if use else "localhost",
+        "PORT": os.getenv("DB_PORT") if use else "",
     }
 }
 

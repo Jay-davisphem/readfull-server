@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .models import Chapter, Comment, CommentResponse, Novel, Profile
 from .permissions import (IsAuthorOrAdmin, IsCommenterOrAdmin,
@@ -25,10 +26,20 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = UserSerializer(data=data)
         if serializer.is_valid(raise_exception=True):
             data = serializer.data
-            user = User(username=data.get("username"), email=data.get("email"))
+            user = User(username=data.get("username"))
+            if data.get("email"):
+                user.email = data.get("email")
             user.set_password(request.data.get("password"))
             user.save()
-            return Response({"token": str(user.auth_token), "user": data})
+
+            data["email"] = user.email
+            data["profile_id"] = user.profile.pk
+            return Response(
+                {
+                    "token": str(user.auth_token),
+                    "user": data,
+                }
+            )
 
     @action(detail=False, methods=["post"])
     def login(self, request):
@@ -38,12 +49,10 @@ class UserViewSet(viewsets.ModelViewSet):
         )
 
         if user:
-            return Response(
-                {
-                    "token": str(user.auth_token),
-                    "user": UserSerializer(data).data,
-                }
-            )
+            data = UserSerializer(data).data
+            data["email"] = user.email
+            data["profile_id"] = user.profile.pk
+            return Response({"token": str(user.auth_token), "user": data})
 
         return Response(
             {
@@ -96,6 +105,14 @@ class NovelViewSet(viewsets.ModelViewSet):
     serializer_class = NovelSerializer
     permission_classes = [IsAuthorOrAdmin]
 
+    def create(self, request):
+        user_id = request.user.id
+        data = request.data
+        serializer = NovelSerializer(data=data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save(author_id=user_id)
+            return Response(serializer.data)
+
 
 class ChapterViewSet(viewsets.ModelViewSet):
     queryset = Chapter.objects.all()
@@ -110,7 +127,7 @@ class ChapterViewSet(viewsets.ModelViewSet):
 
     def create(self, request, pk=None):
         novel = self.get_novel(pk)
-        last = Chapter.objects.last()
+        last = novel.chapter_set.last()
         serializer = ChapterSerializer(request.data)
         data = serializer.data
         if last:
@@ -118,12 +135,14 @@ class ChapterViewSet(viewsets.ModelViewSet):
                 **{**data, "novel_id": pk, "chapter_no": last.chapter_no + 1}
             )
         else:
-            ch = Chapter.objects.create(**data, novel_id=pk, chapter_no=1)
+            ch = Chapter.objects.create(
+                title=data["title"], content=data["content"], novel_id=pk, chapter_no=1
+            )
         serializer = ChapterSerializer(ch)
         return Response(
             {
                 "details": f"{novel.title}\
-Chapter {serializer.data['chapter_no']} successfully created",
+Chapter {ch.chapter_no} successfully created",
             },
             status=status.HTTP_201_CREATED,
         )
@@ -149,7 +168,7 @@ Chapter {serializer.data['chapter_no']} successfully created",
         self.get_novel(pk=pk)
         return self.get_object(pk=ch_pk)
 
-    def desstroy(self, request, pk=None, ch_pk=None):
+    def destroy(self, request, pk=None, ch_pk=None):
         self.__detail(request, pk, ch_pk).delete()
         return Response("Deleted successfully")
 
@@ -163,9 +182,48 @@ Chapter {serializer.data['chapter_no']} successfully created",
         try:
             ch.title = data.get("title", p_title)
             ch.content = data.get("content", p_content)
-            ch.chapter_no = data.get("chapter_no", p_chn)
+            ch.chapter_no = request.data.get("chapter_no", p_chn)
             ch.save()
             data = ChapterSerializer(ch).data
             return Response(data)
         except Exception:
             return Response("Could not update {ch.title}")
+
+
+viewsets.ViewSet
+
+
+class GenreAPIView(viewsets.ViewSet):
+    def list(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            genres = Novel.GENRE_CHOICES
+            return Response(genres)
+        else:
+            return Response(
+                {"details": "Not authenticated!"},
+                status=status.HTTP_511_NETWORK_AUTHENTICATION_REQUIRED,
+            )
+
+
+class StatusAPIView(viewsets.ViewSet):
+    def list(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            statuses = Novel.NovelStatus.choices
+            return Response(statuses)
+        else:
+            return Response(
+                {"details": "Not authenticated!"},
+                status=status.HTTP_511_NETWORK_AUTHENTICATION_REQUIRED,
+            )
+
+
+class LikesAPIView(viewsets.ViewSet):
+    def list(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            likes = Chapter.LikesChoices.choices
+            return Response(likes)
+        else:
+            return Response(
+                {"details": "Not authenticated!"},
+                status=status.HTTP_511_NETWORK_AUTHENTICATION_REQUIRED,
+            )

@@ -5,15 +5,10 @@ from .models import Chapter, Comment, CommentResponse, Novel, Profile
 
 
 class UserSerializer(serializers.ModelSerializer):
-    profile_id = serializers.SerializerMethodField()
-
     class Meta:
         model = User
-        fields = ["username", "email", "password", "profile_id"]
+        fields = ["username", "email", "password"]
         extra_kwargs = {"password": {"write_only": True}}
-
-    def get_profile_id(self, obj):
-        return obj.profile.pk
 
 
 class ProfileSerializer(serializers.ModelSerializer):
@@ -36,9 +31,18 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 
 class ChapterSerializer(serializers.ModelSerializer):
+    chapter_no = serializers.SerializerMethodField()
+
     class Meta:
         model = Chapter
         fields = ["title", "content", "novel_id", "chapter_no"]
+
+    def get_chapter_no(self, obj):
+        print(obj)
+        try:
+            return obj.get("chapter_no")
+        except:
+            return obj.chapter_no
 
 
 class NovelSerializer(serializers.ModelSerializer):

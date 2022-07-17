@@ -21,6 +21,11 @@ urlpatterns = [
     path(
         "novels/<int:pk>/chapters/<int:ch_pk>/", chapter_detail, name="chapter_detail"
     ),
+    path("genre-choices/", views.GenreAPIView.as_view({"get": "list"}), name="genres"),
+    path(
+        "status-choices/", views.StatusAPIView.as_view({"get": "list"}), name="status"
+    ),
+    path("like-choices/", views.LikesAPIView.as_view({"get": "list"}), name="likes"),
 ]
 
 urlpatterns += docs_urls.urlpatterns

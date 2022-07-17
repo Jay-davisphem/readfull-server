@@ -40,6 +40,7 @@ class Novel(models.Model):
         __empty__ = ""
 
     GENRE_CHOICES = [
+        ("None", ""),
         (
             "Fiction",
             (
@@ -90,7 +91,7 @@ class Chapter(models.Model):
         FIVE = 5, "Interesting"
 
     title = models.CharField(max_length=100)
-    chapter_no = models.PositiveIntegerField(default=0, unique=True)
+    chapter_no = models.PositiveIntegerField(default=0)
     content = models.TextField()
     likes = models.IntegerField(choices=LikesChoices.choices, default=0)
     novel = models.ForeignKey(Novel, on_delete=models.CASCADE)
@@ -98,7 +99,12 @@ class Chapter(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["chapter_no"]
+        ordering = ["novel__title", "chapter_no"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["chapter_no", "novel_id"], name="unique_chapter_in_novel"
+            ),
+        ]
 
     def __str__(self):
         return f"{self.novel.title} | Chapter {self.chapter_no} - {self.title}"
