@@ -107,13 +107,13 @@ class Chapter(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.novel.title} | Chapter {self.chapter_no} - {self.title}"
+        return f"{self.novel.title} | Chapter {self.chapter_no} - {self.title} --> {self.comment_set.count()} comments"
 
 
 class Comment(models.Model):
     chapter = models.ForeignKey(Chapter, on_delete=models.CASCADE)
-    commentor = models.ManyToManyField(User)
-    content = models.TextField()
+    commentor = models.ForeignKey(User, on_delete=models.CASCADE)
+    message = models.TextField()
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
@@ -121,7 +121,7 @@ class Comment(models.Model):
         ordering = ["-updated", "-created"]
 
     def __str__(self):
-        return f"Comment {self.id}"
+        return f"{self.chapter.novel.title} - chapter {self.chapter.chapter_no}| Comment {self.id}"
 
 
 class CommentResponse(models.Model):
@@ -135,4 +135,4 @@ class CommentResponse(models.Model):
         ordering = ["-updated", "-created"]
 
     def __str__(self):
-        return f"Comment {self.comment.id} Response {self.id}"
+        return f"{self.comment.chapter.novel.title} - chapter {self.comment.chapter.chapter_no} | Comment {self.comment.id} Response {self.id}"

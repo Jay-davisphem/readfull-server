@@ -122,8 +122,10 @@ class ChapterViewSet(viewsets.ModelViewSet):
     def get_novel(self, pk=None):
         return get_object_or_404(Novel, pk=pk)
 
-    def get_object(self, pk=None):
-        return get_object_or_404(self.get_queryset(), pk=pk)
+    def get_object(self, pk=None, ch_pk=None):
+        return get_object_or_404(
+            self.get_queryset().filter(novel_id=pk), chapter_no=ch_pk
+        )
 
     def create(self, request, pk=None):
         novel = self.get_novel(pk)
@@ -142,14 +144,14 @@ class ChapterViewSet(viewsets.ModelViewSet):
         return Response(
             {
                 "details": f"{novel.title}\
-Chapter {ch.chapter_no} successfully created",
+ Chapter {ch.chapter_no} successfully created",
             },
             status=status.HTTP_201_CREATED,
         )
 
     def retrieve(self, request, pk=None, ch_pk=None):
         self.get_novel(pk)
-        ch = self.get_object(pk=ch_pk)
+        ch = self.get_object(pk=pk, ch_pk=ch_pk)
         serializer = ChapterSerializer(ch)
         return Response(serializer.data)
 
@@ -166,7 +168,7 @@ Chapter {ch.chapter_no} successfully created",
 
     def __detail(self, request, pk=None, ch_pk=None):
         self.get_novel(pk=pk)
-        return self.get_object(pk=ch_pk)
+        return self.get_object(pk=pk, ch_pk=ch_pk)
 
     def destroy(self, request, pk=None, ch_pk=None):
         self.__detail(request, pk, ch_pk).delete()
@@ -227,3 +229,16 @@ class LikesAPIView(viewsets.ViewSet):
                 {"details": "Not authenticated!"},
                 status=status.HTTP_511_NETWORK_AUTHENTICATION_REQUIRED,
             )
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+    permission_classes = [IsCommenterOrAdmin]
+
+    def create(self, request, *args):
+        data = request.data
+        serializer = CommentSerializer(data=data)
+        if serializer.is_valid(raise_exception=True) and data.get("chapter"):
+            serializer.save(commentor=request.user)
+            return Response(serializer.data)

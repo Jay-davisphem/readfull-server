@@ -38,11 +38,9 @@ class ChapterSerializer(serializers.ModelSerializer):
         fields = ["title", "content", "novel_id", "chapter_no"]
 
     def get_chapter_no(self, obj):
-        print(obj)
-        try:
-            return obj.get("chapter_no")
-        except:
+        if isinstance(Chapter, obj):
             return obj.chapter_no
+        return obj.get("chapter_no")
 
 
 class NovelSerializer(serializers.ModelSerializer):
@@ -52,9 +50,17 @@ class NovelSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
+    which_comment = serializers.SerializerMethodField()
+    from_ = serializers.PrimaryKeyRelatedField(source="commentor", read_only=True)
+    novel = serializers.IntegerField(source="chapter.novel.pk")
+
     class Meta:
         model = Comment
-        fields = "__all__"
+        fields = ["id", "novel", "which_comment", "chapter", "from_", "message"]
+
+    def get_which_comment(self, obj):
+        if isinstance(obj, Comment):
+            return f"{obj.chapter.novel.title} - chapter {obj.chapter.chapter_no} | comment {obj.chapter.id} by {obj.commentor.username}"
 
 
 class CommentResponseSerializer(serializers.ModelSerializer):

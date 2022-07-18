@@ -8,7 +8,9 @@ register = views.UserViewSet.as_view({"post": "register"})
 
 router = DefaultRouter()
 router.register(r"profiles", views.ProfileViewSet, basename="profiles")
-router.register("novels", views.NovelViewSet, basename="novels")
+router.register(r"novels", views.NovelViewSet, basename="novels")
+router.register(r"comments", views.CommentViewSet, basename="comments")
+
 chapter_list = views.ChapterViewSet.as_view({"post": "create", "get": "list"})
 chapter_detail = views.ChapterViewSet.as_view(
     {"get": "retrieve", "put": "update", "delete": "destroy"}
